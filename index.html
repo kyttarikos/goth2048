@@ -4,869 +4,690 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>2048 — for denise</title>
-
 <style>
-/* === Fonts === */
+/* ===== Fonts ===== */
 @font-face {
-  font-display: swap;
-  font-family: 'UnifrakturMaguntia';
+  font-family: 'UnifrakturCook';
   font-style: normal;
-  font-weight: 400;
-  src: url('../fonts/unifrakturmaguntia-v21-latin-regular.woff2') format('woff2');
-}
-:root{
-  --bg:#0b0606;
-  --panel:#120808;
-  --tile-text:#fff;
-  --accent:#b90a0a; /* red */
-  --muted: rgba(255,255,255,0.08);
-  --tile-0: rgba(255,255,255,0.03);
-  --tile-2: #2a0b0b;
-  --tile-4: #3a0d0d;
-  --tile-8: #4b0f0f;
-  --tile-16:#5d1212;
-  --tile-32:#6f1616;
-  --tile-64:#8a1b1b;
-  --tile-128:#a02020;
-  --tile-256:#bf2929;
-  --tile-512:#d73b3b;
-  --tile-1024:#e85a5a;
-  --tile-2048:#ff7b7b;
+  font-weight: 700;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/unifrakturcook/v24/IurA6Yli8YOdcoky-0PTTdkm56n05Xwy1oM.woff2) format('woff2');
+  unicode-range: U+0000-00FF;
 }
 
-/* === Page === */
+/* ===== Color variables ===== */
+:root{
+  --bg-start: #000000;
+  --bg-mid: #000000;
+  --darkfuschia: #390021;
+  --darkred: #2b0000;
+  --fuschia: #ff2fa6;
+  --accent: #b90a0a;
+  --panel: rgba(255,255,255,0.03);
+  --lyric-duration: 120s; /* slow */
+}
+
+/* ===== Page background gradient ===== */
 html,body{
   height:100%;
   margin:0;
-  background:var(--bg);
-  color:var(--tile-text);
+  background: linear-gradient(180deg, var(--bg-start) 0%, var(--bg-mid) 48%, var(--darkfuschia) 78%, var(--darkred) 100%);
+  color:#fff;
   font-family: "Times New Roman", Times, serif;
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
   display:flex;
   align-items:center;
   justify-content:center;
-  padding:24px;
-  box-sizing:border-box;
+  padding:18px;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  overflow:hidden;
 }
 
-/* === Background lyrics === */
+/* ===== Lyrics area: left, center, right ===== */
 .bg-lyrics{
   position:fixed;
   inset:0;
   z-index:0;
   pointer-events:none;
   overflow:hidden;
-  display:flex;
-  align-items:center;
-  justify-content:center;
 }
 .lyric-stripe{
   position:absolute;
-  width:120%;
-  left:-10%;
-  font-family: 'UnifrakturMaguntia', "Times New Roman", serif;
-  font-size:20px;
-  line-height:1.4;
-  white-space:pre-wrap;
-  text-align:center;
-  opacity:0.12;
-  color:#ff0000;
-  transform:translateY(0);
-  will-change:transform;
-  user-select:none;
-}
-
-/* two stripes alternate direction and timing */
-.lyric-stripe.a{
-  animation: slideDown 40s linear infinite;
-}
-.lyric-stripe.b{
-  animation: slideUp 40s linear infinite;
-  animation-delay: 20s;
-}
-
-/* Keyframes for alternating slide directions */
-@keyframes slideDown{
-  0%{ transform:translateY(-110%); }
-  50%{ transform:translateY(10%); }
-  100%{ transform:translateY(110%); }
-}
-@keyframes slideUp{
-  0%{ transform:translateY(110%); }
-  50%{ transform:translateY(-10%); }
-  100%{ transform:translateY(-110%); }
-}
-
-/* === Game container === */
-.container{
-  width:520px;
-  max-width:96vw;
-  position:relative;
-  z-index:2;
-}
-
-/* header */
-.header{
+  top:0;
+  bottom:0;
   display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:12px;
-  gap:12px;
-}
-.title{
-  font-family: 'UnifrakturMaguntia', "Times New Roman", serif;
-  font-size:28px;
-  color:var(--accent);
-  letter-spacing:1px;
-}
-.controls{
-  display:flex;
-  gap:8px;
-  align-items:center;
-}
-.button{
-  background:transparent;
-  border:1px solid rgba(255,255,255,0.08);
-  color:var(--tile-text);
-  padding:8px 10px;
-  border-radius:6px;
-  cursor:pointer;
-  font-size:14px;
-}
-.score{
-  background:var(--panel);
-  padding:8px 12px;
-  border-radius:8px;
-  border:1px solid rgba(255,255,255,0.06);
-  text-align:center;
-}
-
-/* panel */
-.panel{
-  background:linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,0,0,0.65));
-  padding:18px;
-  border-radius:12px;
-  box-shadow: 0 6px 30px rgba(0,0,0,0.6);
-  position:relative;
-}
-
-/* grid */
-.grid{
-  width:100%;
-  aspect-ratio:1/1;
-  background:rgba(0,0,0,0.2);
-  border-radius:8px;
-  padding:12px;
-  box-sizing:border-box;
-  position:relative;
-}
-.row{
-  display:flex;
-  gap:12px;
-  height:calc((100% - 36px)/4);
-  margin-bottom:12px;
-}
-.row:last-child{ margin-bottom:0; }
-.cell{
-  flex:1;
-  background:var(--tile-0);
-  border-radius:6px;
-  position:relative;
-}
-
-/* tiles container sits on top of cell grid */
-.tiles{
-  position:absolute;
-  inset:12px;
+  /* make side stripes stretch so track can be full height */
+  align-items:stretch;
+  justify-content:center;
+  overflow:hidden;
+  z-index:0;
   pointer-events:none;
 }
 
-/* tile */
-.tile{
-  position:absolute;
-  border-radius:6px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:700;
-  color:var(--tile-text);
+/* center and sides layout */
+.lyric-stripe.center{ left:10%; right:10%; width:auto; }
+.lyric-stripe.left { left:0; width:22%; }
+.lyric-stripe.right{ right:0; width:22%; }
+
+/* lyric-track is 200% height and the two blocks each 50% — guarantees seamless looping */
+.lyric-track{
+  width:100%;
+  height:200%;
+  display:block;           /* vertical stacking */
   box-sizing:border-box;
-  transition: transform 150ms ease, left 150ms ease, top 150ms ease;
-  transform-origin:center center;
-  will-change: transform, left, top;
-  padding:6px;
-  text-align:center;
-  font-size:24px;
-  user-select:none;
-  border: 1px solid rgba(0,0,0,0.2);
+  will-change: transform;
 }
 
-/* spawn animation using scale */
-.tile.new {
-  animation: pop 160ms ease;
-}
-@keyframes pop{
-  0%{ transform: scale(0.2); }
-  60%{ transform: scale(1.08); }
-  100%{ transform: scale(1); }
-}
-
-/* merged pulse */
-.tile.merged {
-  animation: merged 200ms ease;
-}
-@keyframes merged{
-  0%{ transform: scale(1); }
-  50%{ transform: scale(1.14); }
-  100%{ transform: scale(1); }
-}
-
-/* tile colors by value */
-.tile.v2{ background:var(--tile-2); }
-.tile.v4{ background:var(--tile-4); }
-.tile.v8{ background:var(--tile-8); }
-.tile.v16{ background:var(--tile-16); font-size:20px; }
-.tile.v32{ background:var(--tile-32); font-size:20px; }
-.tile.v64{ background:var(--tile-64); font-size:20px; }
-.tile.v128{ background:var(--tile-128); font-size:18px; }
-.tile.v256{ background:var(--tile-256); font-size:18px; }
-.tile.v512{ background:var(--tile-512); font-size:16px; }
-.tile.v1024{ background:var(--tile-1024); font-size:15px; }
-.tile.v2048{ background:var(--tile-2048); font-size:14px; }
-
-/* footer note */
-.note{
-  text-align:center;
-  margin-top:12px;
-  opacity:0.9;
-  font-size:13px;
-  color:rgba(255,255,255,0.8);
-}
-.credit{
-  margin-top:6px;
-  font-family: 'UnifrakturMaguntia', "Times New Roman", serif;
-  color:var(--accent);
-  font-size:14px;
-}
-
-/* small helper for message overlays */
-.overlay{
-  position:absolute;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:linear-gradient(180deg, rgba(0,0,0,0.5), rgba(0,0,0,0.75));
-  z-index:10;
-  border-radius:12px;
-  color:white;
+/* each duplicate block is half the track height */
+.lyric-block{
+  display:block;
+  height:50%;
+  padding: 16px 10px;
+  box-sizing:border-box;
+  font-family: 'UnifrakturCook', "Times New Roman", serif;
   font-size:28px;
+  line-height:1.18;      /* tighter spacing */
   text-align:center;
-  padding:24px;
+  opacity:0.14;
+  white-space:pre-wrap;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+  overflow:hidden;
 }
-.hidden{ display:none; }
-.small{ font-size:14px; opacity:0.9; margin-top:8px; }
+
+/* line spacing and alternating colors */
+.lyric-line{ display:block; margin:2px 0; padding:0; }
+.lyric-line:nth-child(odd) { color: var(--accent); }
+.lyric-line:nth-child(even){ color: var(--fuschia); }
+
+/* ===== Scrolling keyframes ===== */
+@keyframes scrollUp   { from { transform: translateY(0%); } to { transform: translateY(-50%); } }
+@keyframes scrollDown { from { transform: translateY(-50%); } to { transform: translateY(0%); } }
+
+/* start positions set so all tracks begin immediately and loop smoothly */
+.lyric-stripe.left  .lyric-track,
+.lyric-stripe.right .lyric-track {
+  transform: translateY(0%);
+  animation: scrollUp var(--lyric-duration) linear infinite;
+}
+.lyric-stripe.center .lyric-track {
+  transform: translateY(-50%);
+  animation: scrollDown var(--lyric-duration) linear infinite;
+}
+
+/* ===== Game UI and tiles ===== */
+.container{ width:560px; max-width:96vw; z-index:2; }
+.header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:14px; }
+.title{ font-family: 'UnifrakturCook', "Times New Roman", serif; color:var(--accent); font-size:34px; margin:0; }
+.sub{ font-size:12px; opacity:0.9; }
+
+.controls{ display:flex; gap:8px; align-items:center; }
+.button{ background:transparent; border:1px solid rgba(255,255,255,0.06); color:white; padding:8px 10px; border-radius:8px; cursor:pointer; font-size:13px; }
+.score{ background:var(--panel); padding:8px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); text-align:center; min-width:84px; }
+
+.panel{ background: linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.45)); padding:18px; border-radius:12px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); position:relative; }
+
+.grid{ width:100%; aspect-ratio:1/1; background:rgba(255,255,255,0.02); border-radius:8px; padding:12px; box-sizing:border-box; position:relative; overflow:hidden; }
+.cells{ position:absolute; inset:12px; display:grid; grid-template-columns: repeat(4,1fr); grid-template-rows: repeat(4,1fr); gap:12px; z-index:0; }
+.cell{ background: rgba(255,255,255,0.02); border-radius:8px; }
+
+.tiles{ position:absolute; inset:12px; z-index:2; pointer-events:none; }
+.tile{
+  position:absolute; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700;
+  color:#fff; box-sizing:border-box; padding:6px; text-align:center;
+  transition: transform 160ms cubic-bezier(.2,.9,.2,1), left 160ms cubic-bezier(.2,.9,.2,1), top 160ms cubic-bezier(.2,.9,.2,1);
+  will-change: transform, left, top; user-select:none;
+  border:1px solid rgba(0,0,0,0.25); box-shadow:0 6px 18px rgba(0,0,0,0.55);
+  font-family: 'UnifrakturCook', "Times New Roman", serif; font-size:36px;
+}
+.tile.v16 { font-size:32px; } .tile.v32 { font-size:30px; } .tile.v64 { font-size:28px; }
+.tile.v128 { font-size:26px; } .tile.v256 { font-size:24px; } .tile.v512 { font-size:22px; }
+.tile.v1024{ font-size:20px; } .tile.v2048{ font-size:18px; }
+
+.tile.new { animation: pop 180ms ease; }
+@keyframes pop{ 0%{ transform: scale(0.2); } 60%{ transform: scale(1.08);} 100%{ transform: scale(1);} }
+.tile.merged { animation: pulse 220ms ease; }
+@keyframes pulse{ 0%{ transform: scale(1);} 50%{ transform: scale(1.12);} 100%{ transform: scale(1);} }
+
+/* Reds (dark -> vibrant) */
+.tile.v2   { background:#120202; }
+.tile.v4   { background:#200303; }
+.tile.v8   { background:#3b0303; }
+.tile.v16  { background:#5a0505; }
+.tile.v32  { background:#8a0b0b; }
+.tile.v64  { background:#b90a0a; }
+
+/* Fuschia range (dark -> vibrant) */
+.tile.v128 { background:#6a0038; color:#fff; }
+.tile.v256 { background:#9f135f; color:#fff; }
+.tile.v512 { background:#c21f7e; color:#fff; }
+.tile.v1024{ background:#e02a93; color:#12000a; }
+.tile.v2048{ background:#ff2fa6; color:#12000a; }
+
+.overlay{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:linear-gradient(180deg, rgba(0,0,0,0.56), rgba(0,0,0,0.78)); z-index:10; border-radius:12px; color:white; font-size:28px; text-align:center; padding:22px; }
+.hidden{ display:none; } .small{ font-size:14px; opacity:0.9; margin-top:8px; }
+.note{ margin-top:12px; text-align:center; font-size:13px; opacity:0.95; }
+.credit{ margin-top:6px; font-family: 'UnifrakturCook', "Times New Roman", serif; color:var(--accent); font-size:14px; }
 
 @media (max-width:520px){
-  .title{ font-size:20px; }
-  .note{ font-size:12px; }
-  .lyric-stripe{ font-size:14px; }
+  .title{ font-size:26px; }
+  .lyric-block{ font-size:18px; }
+  .lyric-stripe.left, .lyric-stripe.right{ display:none; }
 }
 </style>
 </head>
 <body>
 
-<!-- translucent moving background lyrics -->
+<!-- ===== Lyrics: left, center, right (each track has two identical blocks stacked) ===== -->
 <div class="bg-lyrics" aria-hidden="true">
-  <div class="lyric-stripe a" id="lyricA">
-I never said I'd lie in wait forever...
-If I died, we'd be together, now.
-I can't always just forget her.
-But she could try...
-At the end of the world,
-or the last thing I see
-you are never coming home,
-never coming home—
-Could I?
-Should I?
-And all the things that you never ever told me,
-and all the smiles that are ever, ever...
-Ever get the feeling that you're never all alone?
-And I remember now.
-At the top of my lungs
-in my arms, she dies...
-she dies!
-At the end of the world,
-or the last thing I see
-you are never coming home,
-never coming home—
-Could I?
-Should I?
-And all the things that you never ever told me,
-and all the smiles that are ever gonna haunt me—
-Never coming home,
-never coming home—
-Could I?
-Should I?
-And all the wounds that are ever gonna scar me,
-for all the ghosts that are never gonna catch me.
-If I fall...
-If I fall down...
-At the end of the world,
-or the last thing I see
-you are never coming home,
-never coming home—
-Could I?
-Should I?
-And all the things that you never ever told me,
-and all the smiles that are ever gonna haunt me—
-Never coming home,
-never coming home—
-Could I?
-Should I?
-And all the wounds that are ever gonna scar me,
-for all the ghosts that are never gonna...
+
+  <!-- LEFT (moves up) -->
+  <div class="lyric-stripe left" aria-hidden="true">
+    <div class="lyric-track" role="presentation">
+      <div class="lyric-block" aria-hidden="true">
+        <span class="lyric-line">I never said I'd lie in wait forever...</span>
+        <span class="lyric-line">If I died, we'd be together, now.</span>
+        <span class="lyric-line">I can't always just forget her.</span>
+        <span class="lyric-line">But she could try...</span>
+        <span class="lyric-line">At the end of the world,</span>
+        <span class="lyric-line">or the last thing I see</span>
+        <span class="lyric-line">you are never coming home,</span>
+        <span class="lyric-line">never coming home—</span>
+        <span class="lyric-line">Could I?</span>
+        <span class="lyric-line">Should I?</span>
+        <span class="lyric-line">And all the things that you never ever told me,</span>
+        <span class="lyric-line">and all the smiles that are ever, ever...</span>
+        <span class="lyric-line">Ever get the feeling that you're never all alone?</span>
+        <span class="lyric-line">And I remember now.</span>
+        <span class="lyric-line">At the top of my lungs</span>
+        <span class="lyric-line">in my arms, she dies...</span>
+        <span class="lyric-line">she dies!</span>
+        <span class="lyric-line">At the end of the world,</span>
+        <span class="lyric-line">or the last thing I see</span>
+        <span class="lyric-line">you are never coming home,</span>
+        <span class="lyric-line">never coming home—</span>
+        <span class="lyric-line">Could I?</span>
+        <span class="lyric-line">Should I?</span>
+        <span class="lyric-line">And all the things that you never ever told me,</span>
+        <span class="lyric-line">and all the smiles that are ever gonna haunt me—</span>
+        <span class="lyric-line">Never coming home,</span>
+        <span class="lyric-line">never coming home—</span>
+        <span class="lyric-line">Could I?</span>
+        <span class="lyric-line">Should I?</span>
+        <span class="lyric-line">And all the wounds that are ever gonna scar me,</span>
+        <span class="lyric-line">for all the ghosts that are never gonna catch me.</span>
+        <span class="lyric-line">If I fall...</span>
+        <span class="lyric-line">If I fall down...</span>
+        <span class="lyric-line">At the end of the world,</span>
+        <span class="lyric-line">or the last thing I see</span>
+        <span class="lyric-line">you are never coming home,</span>
+        <span class="lyric-line">never coming home—</span>
+        <span class="lyric-line">Could I?</span>
+        <span class="lyric-line">Should I?</span>
+        <span class="lyric-line">And all the things that you never ever told me,</span>
+        <span class="lyric-line">and all the smiles that are ever gonna haunt me—</span>
+        <span class="lyric-line">Never coming home,</span>
+        <span class="lyric-line">never coming home—</span>
+        <span class="lyric-line">Could I?</span>
+        <span class="lyric-line">Should I?</span>
+        <span class="lyric-line">And all the wounds that are never gonna...</span>
+      </div>
+
+      <div class="lyric-block" aria-hidden="true">
+        <!-- duplicate -->
+        <span class="lyric-line">I never said I'd lie in wait forever...</span>
+        <span class="lyric-line">If I died, we'd be together, now.</span>
+        <!-- ...repeat same lines for seamless loop... -->
+        <span class="lyric-line">I can't always just forget her.</span>
+        <span class="lyric-line">But she could try...</span>
+        <span class="lyric-line">At the end of the world,</span>
+        <span class="lyric-line">or the last thing I see</span>
+        <span class="lyric-line">you are never coming home,</span>
+        <span class="lyric-line">never coming home—</span>
+        <span class="lyric-line">Could I?</span>
+        <span class="lyric-line">Should I?</span>
+        <span class="lyric-line">And all the things that you never ever told me,</span>
+        <span class="lyric-line">and all the smiles that are ever, ever...</span>
+        <span class="lyric-line">Ever get the feeling that you're never all alone?</span>
+        <span class="lyric-line">And I remember now.</span>
+        <span class="lyric-line">At the top of my lungs</span>
+        <span class="lyric-line">in my arms, she dies...</span>
+        <span class="lyric-line">she dies!</span>
+        <span class="lyric-line">At the end of the world,</span>
+        <span class="lyric-line">or the last thing I see</span>
+        <span class="lyric-line">you are never coming home,</span>
+        <span class="lyric-line">never coming home—</span>
+        <span class="lyric-line">Could I?</span>
+        <span class="lyric-line">Should I?</span>
+        <span class="lyric-line">And all the things that you never ever told me,</span>
+        <span class="lyric-line">and all the smiles that are ever gonna haunt me—</span>
+        <span class="lyric-line">Never coming home,</span>
+        <span class="lyric-line">never coming home—</span>
+        <span class="lyric-line">Could I?</span>
+        <span class="lyric-line">Should I?</span>
+        <span class="lyric-line">And all the wounds that are ever gonna scar me,</span>
+        <span class="lyric-line">for all the ghosts that are never gonna catch me.</span>
+        <span class="lyric-line">If I fall...</span>
+        <span class="lyric-line">If I fall down...</span>
+        <span class="lyric-line">At the end of the world,</span>
+        <span class="lyric-line">or the last thing I see</span>
+        <span class="lyric-line">you are never coming home,</span>
+        <span class="lyric-line">never coming home—</span>
+        <span class="lyric-line">Could I?</span>
+        <span class="lyric-line">Should I?</span>
+        <span class="lyric-line">And all the things that you never ever told me,</span>
+        <span class="lyric-line">and all the smiles that are ever gonna...</span>
+      </div>
+    </div>
   </div>
 
-  <div class="lyric-stripe b" id="lyricB">
-I never said I'd lie in wait forever...
-If I died, we'd be together, now.
-I can't always just forget her.
-But she could try...
-At the end of the world,
-or the last thing I see
-you are never coming home,
-never coming home—
-Could I?
-Should I?
-And all the things that you never ever told me,
-and all the smiles that are ever, ever...
-Ever get the feeling that you're never all alone?
-And I remember now.
-At the top of my lungs
-in my arms, she dies...
-she dies!
-At the end of the world,
-or the last thing I see
-you are never coming home,
-never coming home—
-Could I?
-Should I?
-And all the things that you never ever told me,
-and all the smiles that are ever gonna haunt me—
-Never coming home,
-never coming home—
-Could I?
-Should I?
-And all the wounds that are ever gonna scar me,
-for all the ghosts that are never gonna catch me.
-If I fall...
-If I fall down...
-At the end of the world,
-or the last thing I see
-you are never coming home,
-never coming home—
-Could I?
-Should I?
-And all the things that you never ever told me,
-and all the smiles that are ever gonna haunt me—
-Never coming home,
-never coming home—
-Could I?
-Should I?
-And all the wounds that are ever gonna scar me,
-for all the ghosts that are never gonna...
+  <!-- CENTER (moves down) -->
+  <div class="lyric-stripe center" aria-hidden="true">
+    <div class="lyric-track" role="presentation">
+      <div class="lyric-block" aria-hidden="true">
+        <span class="lyric-line">I never said I'd lie in wait forever...</span>
+        <span class="lyric-line">If I died, we'd be together, now.</span>
+        <span class="lyric-line">I can't always just forget her.</span>
+        <span class="lyric-line">But she could try...</span>
+        <span class="lyric-line">At the end of the world,</span>
+        <span class="lyric-line">or the last thing I see</span>
+        <span class="lyric-line">you are never coming home,</span>
+        <span class="lyric-line">never coming home—</span>
+        <span class="lyric-line">Could I?</span>
+        <span class="lyric-line">Should I?</span>
+        <span class="lyric-line">And all the things that you never ever told me,</span>
+        <span class="lyric-line">and all the smiles that are ever, ever...</span>
+        <span class="lyric-line">Ever get the feeling that you're never all alone?</span>
+        <span class="lyric-line">And I remember now.</span>
+        <span class="lyric-line">At the top of my lungs</span>
+        <span class="lyric-line">in my arms, she dies...</span>
+        <span class="lyric-line">she dies!</span>
+        <span class="lyric-line">At the end of the world,</span>
+        <span class="lyric-line">or the last thing I see</span>
+        <span class="lyric-line">you are never coming home,</span>
+        <span class="lyric-line">never coming home—</span>
+        <span class="lyric-line">Could I?</span>
+        <span class="lyric-line">Should I?</span>
+        <span class="lyric-line">And all the things that you never ever told me,</span>
+        <span class="lyric-line">and all the smiles that are ever gonna haunt me—</span>
+        <span class="lyric-line">Never coming home,</span>
+        <span class="lyric-line">never coming home—</span>
+        <span class="lyric-line">Could I?</span>
+        <span class="lyric-line">Should I?</span>
+        <span class="lyric-line">And all the wounds that are ever gonna scar me,</span>
+        <span class="lyric-line">for all the ghosts that are never gonna catch me.</span>
+        <span class="lyric-line">If I fall...</span>
+        <span class="lyric-line">If I fall down...</span>
+        <span class="lyric-line">At the end of the world,</span>
+        <span class="lyric-line">or the last thing I see</span>
+        <span class="lyric-line">you are never coming home,</span>
+        <span class="lyric-line">never coming home—</span>
+        <span class="lyric-line">Could I?</span>
+        <span class="lyric-line">Should I?</span>
+        <span class="lyric-line">And all the things that you never ever told me,</span>
+        <span class="lyric-line">and all the smiles that are ever gonna haunt me—</span>
+        <span class="lyric-line">Never coming home,</span>
+        <span class="lyric-line">never coming home—</span>
+        <span class="lyric-line">Could I?</span>
+        <span class="lyric-line">Should I?</span>
+        <span class="lyric-line">And all the wounds that are never gonna...</span>
+      </div>
+
+      <div class="lyric-block" aria-hidden="true">
+        <!-- duplicate -->
+        <span class="lyric-line">I never said I'd lie in wait forever...</span>
+        <span class="lyric-line">If I died, we'd be together, now.</span>
+        <!-- ...repeat same lines... -->
+        <span class="lyric-line">I can't always just forget her.</span>
+        <span class="lyric-line">But she could try...</span>
+        <span class="lyric-line">At the end of the world,</span>
+        <span class="lyric-line">or the last thing I see</span>
+        <span class="lyric-line">you are never coming home,</span>
+        <span class="lyric-line">never coming home—</span>
+        <span class="lyric-line">Could I?</span>
+        <span class="lyric-line">Should I?</span>
+        <span class="lyric-line">And all the things that you never ever told me,</span>
+        <span class="lyric-line">and all the smiles that are ever, ever...</span>
+        <span class="lyric-line">Ever get the feeling that you're never all alone?</span>
+        <span class="lyric-line">And I remember now.</span>
+        <span class="lyric-line">At the top of my lungs</span>
+        <span class="lyric-line">in my arms, she dies...</span>
+        <span class="lyric-line">she dies!</span>
+        <span class="lyric-line">At the end of the world,</span>
+        <span class="lyric-line">or the last thing I see</span>
+        <span class="lyric-line">you are never coming home,</span>
+        <span class="lyric-line">never coming home—</span>
+        <span class="lyric-line">Could I?</span>
+        <span class="lyric-line">Should I?</span>
+        <span class="lyric-line">And all the things that you never ever told me,</span>
+        <span class="lyric-line">and all the smiles that are ever gonna...</span>
+      </div>
+    </div>
   </div>
+
+  <!-- RIGHT (moves up) -->
+  <div class="lyric-stripe right" aria-hidden="true">
+    <div class="lyric-track" role="presentation">
+      <div class="lyric-block" aria-hidden="true">
+        <span class="lyric-line">I never said I'd lie in wait forever...</span>
+        <span class="lyric-line">If I died, we'd be together, now.</span>
+        <span class="lyric-line">I can't always just forget her.</span>
+        <span class="lyric-line">But she could try...</span>
+        <span class="lyric-line">At the end of the world,</span>
+        <span class="lyric-line">or the last thing I see</span>
+        <span class="lyric-line">you are never coming home,</span>
+        <span class="lyric-line">never coming home—</span>
+        <span class="lyric-line">Could I?</span>
+        <span class="lyric-line">Should I?</span>
+        <span class="lyric-line">And all the things that you never ever told me,</span>
+        <span class="lyric-line">and all the smiles that are ever, ever...</span>
+        <span class="lyric-line">Ever get the feeling that you're never all alone?</span>
+        <span class="lyric-line">And I remember now.</span>
+        <span class="lyric-line">At the top of my lungs</span>
+        <span class="lyric-line">in my arms, she dies...</span>
+        <span class="lyric-line">she dies!</span>
+        <span class="lyric-line">At the end of the world,</span>
+        <span class="lyric-line">or the last thing I see</span>
+        <span class="lyric-line">you are never coming home,</span>
+        <span class="lyric-line">never coming home—</span>
+        <span class="lyric-line">Could I?</span>
+        <span class="lyric-line">Should I?</span>
+        <span class="lyric-line">And all the things that you never ever told me,</span>
+        <span class="lyric-line">and all the smiles that are ever gonna haunt me—</span>
+        <span class="lyric-line">Never coming home,</span>
+        <span class="lyric-line">never coming home—</span>
+        <span class="lyric-line">Could I?</span>
+        <span class="lyric-line">Should I?</span>
+        <span class="lyric-line">And all the wounds that are ever gonna scar me,</span>
+        <span class="lyric-line">for all the ghosts that are never gonna catch me.</span>
+        <span class="lyric-line">If I fall...</span>
+        <span class="lyric-line">If I fall down...</span>
+        <span class="lyric-line">At the end of the world,</span>
+        <span class="lyric-line">or the last thing I see</span>
+        <span class="lyric-line">you are never coming home,</span>
+        <span class="lyric-line">never coming home—</span>
+        <span class="lyric-line">Could I?</span>
+        <span class="lyric-line">Should I?</span>
+        <span class="lyric-line">And all the things that you never ever told me,</span>
+        <span class="lyric-line">and all the smiles that are ever gonna haunt me—</span>
+        <span class="lyric-line">Never coming home,</span>
+        <span class="lyric-line">never coming home—</span>
+        <span class="lyric-line">Could I?</span>
+        <span class="lyric-line">Should I?</span>
+        <span class="lyric-line">And all the wounds that are never gonna...</span>
+      </div>
+
+      <div class="lyric-block" aria-hidden="true">
+        <!-- duplicate -->
+        <span class="lyric-line">I never said I'd lie in wait forever...</span>
+        <span class="lyric-line">If I died, we'd be together, now.</span>
+        <span class="lyric-line">I can't always just forget her.</span>
+        <span class="lyric-line">But she could try...</span>
+        <span class="lyric-line">At the end of the world,</span>
+        <span class="lyric-line">or the last thing I see</span>
+        <span class="lyric-line">you are never coming home,</span>
+        <span class="lyric-line">never coming home—</span>
+        <span class="lyric-line">Could I?</span>
+        <span class="lyric-line">Should I?</span>
+        <span class="lyric-line">And all the things that you never ever told me,</span>
+        <span class="lyric-line">and all the smiles that are ever, ever...</span>
+        <span class="lyric-line">Ever get the feeling that you're never all alone?</span>
+        <span class="lyric-line">And I remember now.</span>
+        <span class="lyric-line">At the top of my lungs</span>
+        <span class="lyric-line">in my arms, she dies...</span>
+        <span class="lyric-line">she dies!</span>
+        <span class="lyric-line">At the end of the world,</span>
+        <span class="lyric-line">or the last thing I see</span>
+        <span class="lyric-line">you are never coming home,</span>
+        <span class="lyric-line">never coming home—</span>
+        <span class="lyric-line">Could I?</span>
+        <span class="lyric-line">Should I?</span>
+        <span class="lyric-line">And all the things that you never ever told me,</span>
+        <span class="lyric-line">and all the smiles that are ever gonna haunt me—</span>
+        <span class="lyric-line">Never coming home,</span>
+        <span class="lyric-line">never coming home—</span>
+        <span class="lyric-line">Could I?</span>
+        <span class="lyric-line">Should I?</span>
+        <span class="lyric-line">And all the wounds that are never gonna...</span>
+      </div>
+    </div>
+  </div>
+
 </div>
 
-<!-- game container -->
-<div class="container">
+<!-- ===== Game UI ===== -->
+<div class="container" role="application" aria-label="2048 game">
   <div class="header">
     <div>
-      <div class="title">2048</div>
-      <div style="font-size:12px;opacity:0.85">red • black edition</div>
+      <h1 class="title">2048 &lt;3<br>for denise. ily &lt;3 - i.m.</h1>
     </div>
-
     <div class="controls">
-      <div class="score" id="scoreBox">Score<br><strong id="score">0</strong></div>
-      <button class="button" id="newGameBtn">New Game</button>
+      <div class="score" aria-live="polite">Score<br><strong id="score">0</strong></div>
+      <button class="button" id="newGameBtn" aria-label="New Game">New Game</button>
     </div>
   </div>
 
   <div class="panel">
-    <div class="grid" id="grid">
-      <!-- grid cells (visual) -->
-      <div class="cells" id="cells" style="position:absolute;inset:12px;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);gap:12px;z-index:0;">
-        <!-- created by JS -->
-      </div>
-
-      <!-- tiles live here -->
+    <div class="grid" id="grid" tabindex="0">
+      <div class="cells" id="cells"></div>
       <div class="tiles" id="tiles"></div>
 
-      <!-- overlays -->
-      <div class="overlay hidden" id="gameOverOverlay">
-        Game Over<br><div class="small">Press New Game to try again</div>
-      </div>
-      <div class="overlay hidden" id="winOverlay">
-        You Win!<br><div class="small">Keep going or start new game</div>
-      </div>
+      <div class="overlay hidden" id="gameOverOverlay">Game Over<br><div class="small">Press New Game to try again</div></div>
+      <div class="overlay hidden" id="winOverlay">You Win!<br><div class="small">Keep going or start new game</div></div>
     </div>
-
-    <div class="note">
-      Controls: arrow keys / WASD / swipe. <div class="credit">for denise. ily &lt;3 - i.m.</div>
-    </div>
+    
+    <div class="note">this is a game that you just suddenly started to love as you watched me play again and again. you tried it at first, now it gets you addicted. just like how you made me so addicted to you... well, i just want to say, that i love you forever. i will keep loving you even after the sun dies. a new sun always comes up, whenever you smile. the new sun shines, and it makes my empty body glow in joy, made by you. you make me the most loved man in the world, and i'm really happy that you get to be in my life every single day... i really love you so much, you god damned dork. i'll stay with you for as long as you want me to. my future spouse. &lt;33<br>- truly yours, isaac :)</div>
   </div>
 </div>
 
 <script>
-/* 2048-like implementation (compact but functional)
-   grid is 4x4, values stored as numbers (0 empty).
-   tiles are DOM elements absolutely positioned inside .tiles.
-*/
-
-/* ========== Config ========== */
+/* 2048 game logic & animations (unchanged) */
 const SIZE = 4;
-const TILE_MARGIN = 12; // must match CSS gap/padding
 const gridEl = document.getElementById('grid');
-const tilesContainer = document.getElementById('tiles');
-const cellsContainer = document.getElementById('cells');
-const scoreBox = document.getElementById('score');
+const cellsEl = document.getElementById('cells');
+const tilesEl = document.getElementById('tiles');
+const scoreEl = document.getElementById('score');
 const newBtn = document.getElementById('newGameBtn');
 const gameOverOverlay = document.getElementById('gameOverOverlay');
 const winOverlay = document.getElementById('winOverlay');
 
 let board = [];
 let score = 0;
-let tileSizePx = 0;
-let tileGapPx = 12;
-let tilePositions = {}; // track DOM tiles by id
-let freshTiles = new Set();
+let tileIdCounter = 1;
+let tileMap = {};
+let animating = false;
 
-/* ===== Setup visual grid cells ===== */
-function buildCells(){
-  cellsContainer.innerHTML = '';
-  for(let i=0;i<SIZE*SIZE;i++){
-    const c = document.createElement('div');
-    c.className='cell';
-    cellsContainer.appendChild(c);
-  }
-}
+function buildCells(){ cellsEl.innerHTML=''; for(let i=0;i<SIZE*SIZE;i++){ const d=document.createElement('div'); d.className='cell'; cellsEl.appendChild(d); } }
 buildCells();
+function emptyBoard(){ board = Array.from({length:SIZE}, ()=> Array(SIZE).fill(0)); }
+function cloneBoard(b){ return b.map(r=>r.slice()); }
+function randInt(n){ return Math.floor(Math.random()*n); }
 
-/* ===== Helpers ===== */
-function emptyBoard(){
-  board = [];
-  for(let r=0;r<SIZE;r++){
-    board.push(new Array(SIZE).fill(0));
+function rotateLeft(b){ const n=SIZE, nb=Array.from({length:n}, ()=> Array(n).fill(0)); for(let r=0;r<n;r++) for(let c=0;c<n;c++) nb[n-1-c][r] = b[r][c]; return nb; }
+function rotateRight(b){ const n=SIZE, nb=Array.from({length:n}, ()=> Array(n).fill(0)); for(let r=0;r<n;r++) for(let c=0;c<n;c++) nb[c][n-1-r] = b[r][c]; return nb; }
+function rotate180(b){ const n=SIZE, nb=Array.from({length:n}, ()=> Array(n).fill(0)); for(let r=0;r<n;r++) for(let c=0;c<n;c++) nb[n-1-r][n-1-c] = b[r][c]; return nb; }
+function rotatedToOriginal(rr, rc, rotation){ const n=SIZE; if(rotation==='none') return {r:rr,c:rc}; if(rotation==='left') return {r: rc, c: n-1-rr}; if(rotation==='right') return {r: n-1-rc, c: rr}; if(rotation==='180') return {r: n-1-rr, c: n-1-rc}; }
+
+function moveLeftDetailed(b){
+  const n=SIZE; let moved=false, gained=0; const newBoard = Array.from({length:n}, ()=> Array(n).fill(0)); const mappings=[];
+  for(let r=0;r<n;r++){
+    const sources=[];
+    for(let c=0;c<n;c++) if(b[r][c]!==0) sources.push({v:b[r][c], r, c});
+    if(sources.length===0) continue;
+    const out=[]; let i=0;
+    while(i < sources.length){
+      if(i+1 < sources.length && sources[i].v === sources[i+1].v){
+        const newV = sources[i].v * 2;
+        out.push({v:newV, mergedFrom:[sources[i], sources[i+1]]});
+        gained += newV; i += 2;
+      } else {
+        out.push({v: sources[i].v, mergedFrom:[sources[i]]}); i += 1;
+      }
+    }
+    for(let c=0;c<out.length;c++){
+      newBoard[r][c] = out[c].v;
+      for(const src of out[c].mergedFrom){
+        mappings.push({fromR:src.r, fromC:src.c, toR:r, toC:c, merged: out[c].mergedFrom.length>1, newValue: out[c].v});
+      }
+    }
+    for(let c=0;c<n;c++) if(newBoard[r][c] !== b[r][c]) moved=true;
   }
-}
-function rndInt(n){ return Math.floor(Math.random()*n); }
-
-function coordsToTopLeft(r,c){
-  // compute pixel position using cell sizes
-  const rect = cellsContainer.getBoundingClientRect();
-  const cellW = rect.width / SIZE;
-  const cellH = rect.height / SIZE;
-  const left = c * cellW;
-  const top = r * cellH;
-  return {left, top, w: cellW, h: cellH};
+  return {moved, board:newBoard, gained, mappings};
 }
 
-/* create tile DOM */
-let nextTileId = 1;
-function createTile(value, r, c, isNew=false){
-  const d = document.createElement('div');
-  const id = 't' + (nextTileId++);
-  d.className = `tile v${value} ${isNew? 'new':''}`;
-  d.dataset.id = id;
-  d.dataset.value = value;
-  d.style.width = '0px';
-  d.style.height = '0px';
-  d.style.left = '0px';
-  d.style.top = '0px';
-  d.textContent = value;
-  tilesContainer.appendChild(d);
-  tilePositions[id] = {el: d, r, c, v:value};
-  // ensure animation classes removed later
-  if(isNew){
-    setTimeout(()=>d.classList.remove('new'), 220);
-  }
+function move(dir){
+  let rotated, rotation;
+  if(dir==='left'){ rotated = cloneBoard(board); rotation='none'; }
+  else if(dir==='right'){ rotated = rotate180(board); rotation='180'; }
+  else if(dir==='up'){ rotated = rotateLeft(board); rotation='left'; }
+  else if(dir==='down'){ rotated = rotateRight(board); rotation='right'; }
+  else return {moved:false};
+  const res = moveLeftDetailed(rotated);
+  if(!res.moved) return {moved:false};
+  let final;
+  if(rotation==='none') final=res.board;
+  else if(rotation==='180') final=rotate180(res.board);
+  else if(rotation==='left') final=rotateRight(res.board);
+  else final=rotateLeft(res.board);
+  const mapped = res.mappings.map(m=>{
+    const s = rotatedToOriginal(m.fromR,m.fromC,rotation);
+    const d = rotatedToOriginal(m.toR,m.toC,rotation);
+    return {fromR:s.r, fromC:s.c, toR:d.r, toC:d.c, merged:m.merged, newValue:m.newValue};
+  });
+  return {moved:true, board:final, gained:res.gained, mappings:mapped};
+}
+
+function cellRect(r,c){ const rect = cellsEl.getBoundingClientRect(); const cellW = rect.width / SIZE; const cellH = rect.height / SIZE; return {left: c*cellW, top: r*cellH, w:cellW, h:cellH}; }
+
+function createTileDOM(value, r, c, opts={}) {
+  const el = document.createElement('div');
+  const id = 'tile' + (tileIdCounter++);
+  el.className = 'tile v' + value + (opts.new? ' new':'');
+  el.dataset.id = id; el.dataset.value = value; el.textContent = value;
+  tilesEl.appendChild(el);
+  tileMap[id] = {el, r, c, v:value};
+  const pos = cellRect(r,c);
+  el.style.width = pos.w + 'px';
+  el.style.height = pos.h + 'px';
+  el.style.lineHeight = (pos.h - 12) + 'px';
+  el.style.left = pos.left + 'px';
+  el.style.top = pos.top + 'px';
+  return id;
+}
+function clearTiles(){ tilesEl.innerHTML = ''; tileMap = {}; tileIdCounter = 1; }
+function renderBoardInitial(){ clearTiles(); for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++) if(board[r][c]) createTileDOM(board[r][c], r, c, {new:false}); }
+
+function spawnRandomTile(pop=true){
+  const empties=[]; for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++) if(board[r][c]===0) empties.push({r,c});
+  if(!empties.length) return null;
+  const pick = empties[randInt(empties.length)];
+  const val = Math.random() < 0.9 ? 2 : 4;
+  board[pick.r][pick.c] = val;
+  const id = createTileDOM(val, pick.r, pick.c, {new: pop});
   return id;
 }
 
-/* update tile visuals (position & size & color) */
-function layoutTiles(){
-  const rect = cellsContainer.getBoundingClientRect();
-  const cellW = rect.width / SIZE;
-  const cellH = rect.height / SIZE;
-  for(const id in tilePositions){
-    const t = tilePositions[id];
-    const el = t.el;
-    const pos = coordsToTopLeft(t.r, t.c);
-    el.style.width = (cellW) + 'px';
-    el.style.height = (cellH) + 'px';
-    el.style.left = pos.left + 'px';
-    el.style.top = pos.top + 'px';
-    el.style.lineHeight = (cellH - 12) + 'px';
-    // update classes by value
-    el.className = 'tile v' + t.v + (t.merged? ' merged':'') + (t.new? ' new':'');
-    el.dataset.value = t.v;
-    el.textContent = t.v;
-    if(t.merged){
-      setTimeout(()=>{ if(t.el) t.el.classList.remove('merged'); t.merged=false; }, 220);
-    }
+function layoutAllTiles(){
+  const rect = cellsEl.getBoundingClientRect();
+  const cellW = rect.width / SIZE, cellH = rect.height / SIZE;
+  for(const id in tileMap){
+    const t = tileMap[id];
+    if(!t || !t.el) continue;
+    t.el.style.width = cellW + 'px';
+    t.el.style.height = cellH + 'px';
+    t.el.style.lineHeight = (cellH - 12) + 'px';
+    const pos = cellRect(t.r,t.c);
+    t.el.style.left = pos.left + 'px';
+    t.el.style.top = pos.top + 'px';
   }
 }
 
-/* remove all tile DOMs */
-function clearTiles(){
-  tilesContainer.innerHTML = '';
-  for(const k in tilePositions) delete tilePositions[k];
-}
-
-/* spawn random tile (2 or 4) */
-function addRandomTile(isNew=true){
-  const empties = [];
-  for(let r=0;r<SIZE;r++){
-    for(let c=0;c<SIZE;c++){
-      if(board[r][c]===0) empties.push({r,c});
+async function animateMoveUsingMappings(mappings, finalBoard){
+  animating = true;
+  const coordToIds = {};
+  for(const id in tileMap){ const t = tileMap[id]; coordToIds[`${t.r},${t.c}`] = id; }
+  for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++) if(board[r][c] && !coordToIds[`${r},${c}`]) {
+    const id = createTileDOM(board[r][c], r, c, {new:false});
+    coordToIds[`${r},${c}`] = id;
+  }
+  const destMap = {};
+  for(const m of mappings){
+    const fromKey = `${m.fromR},${m.fromC}`;
+    const srcId = coordToIds[fromKey];
+    if(!srcId) continue;
+    const destKey = `${m.toR},${m.toC}`;
+    if(!destMap[destKey]) destMap[destKey] = [];
+    destMap[destKey].push({id: srcId, newValue: m.newValue, merged: m.merged});
+    tileMap[srcId].r = m.toR; tileMap[srcId].c = m.toC;
+  }
+  layoutAllTiles();
+  await new Promise(r=>setTimeout(r, 200));
+  for(const destKey in destMap){
+    const list = destMap[destKey];
+    if(list.length > 1){
+      const [rStr, cStr] = destKey.split(','); const r = parseInt(rStr), c = parseInt(cStr);
+      for(const s of list){ if(tileMap[s.id] && tileMap[s.id].el){ tileMap[s.id].el.remove(); delete tileMap[s.id]; } }
+      const id = createTileDOM(finalBoard[r][c], r, c, {new:false});
+      tileMap[id].el.classList.add('merged');
+      setTimeout(()=>{ tileMap[id] && tileMap[id].el.classList.remove('merged'); }, 260);
     }
   }
-  if(empties.length===0) return false;
-  const pick = empties[rndInt(empties.length)];
-  const value = Math.random() < 0.9 ? 2 : 4;
-  board[pick.r][pick.c] = value;
-  // create DOM tile
-  const id = createTile(value, pick.r, pick.c, isNew);
-  tilePositions[id].new = isNew;
-  layoutTiles();
-  return true;
-}
-
-/* rotation helpers to fold logic into left-move */
-function rotateLeft(b){
-  const n = SIZE;
-  const nb = [];
-  for(let r=0;r<n;r++){
-    nb.push(new Array(n).fill(0));
-  }
-  for(let r=0;r<n;r++){
-    for(let c=0;c<n;c++){
-      nb[n-1-c][r] = b[r][c];
-    }
-  }
-  return nb;
-}
-function rotateRight(b){
-  const n = SIZE;
-  const nb = [];
-  for(let r=0;r<n;r++) nb.push(new Array(n).fill(0));
-  for(let r=0;r<n;r++){
-    for(let c=0;c<n;c++){
-      nb[c][n-1-r] = b[r][c];
-    }
-  }
-  return nb;
-}
-function rotate180(b){
-  const n=SIZE; const nb=[];
-  for(let r=0;r<n;r++){
-    nb.push(new Array(n).fill(0));
-  }
-  for(let r=0;r<n;r++){
-    for(let c=0;c<n;c++){
-      nb[n-1-r][n-1-c] = b[r][c];
-    }
-  }
-  return nb;
-}
-
-/* compress row to left, merging as 2048 rules */
-function moveLeftOnce(b){
-  let moved=false;
-  let gained = 0;
-  const newBoard = b.map(row => row.slice());
-  for(let r=0;r<SIZE;r++){
-    // compress non-zero
-    const arr = newBoard[r].filter(x=>x!==0);
-    for(let i=0;i<arr.length-1;i++){
-      if(arr[i] === arr[i+1]){
-        arr[i] = arr[i] * 2;
-        gained += arr[i];
-        arr.splice(i+1,1);
-      }
-    }
-    while(arr.length < SIZE) arr.push(0);
-    for(let c=0;c<SIZE;c++){
-      if(newBoard[r][c] !== arr[c]) moved = true;
-      newBoard[r][c] = arr[c];
-    }
-  }
-  return {moved, board:newBoard, gained};
-}
-
-/* check if any moves possible */
-function canMove(b){
-  for(let r=0;r<SIZE;r++){
-    for(let c=0;c<SIZE;c++){
-      if(b[r][c]===0) return true;
-      if(c+1<SIZE && b[r][c]===b[r][c+1]) return true;
-      if(r+1<SIZE && b[r][c]===b[r+1][c]) return true;
-    }
-  }
-  return false;
-}
-
-/* do move in one of four directions: 'left','right','up','down' */
-async function doMove(dir){
-  if(isAnimating) return;
-  let original = board.map(row=>row.slice());
-  let rotated;
-  if(dir==='left'){
-    rotated = original;
-  } else if(dir==='right'){
-    rotated = rotate180(original);
-  } else if(dir==='up'){
-    rotated = rotateLeft(original);
-  } else if(dir==='down'){
-    rotated = rotateRight(original);
-  } else return;
-
-  const res = moveLeftOnce(rotated);
-  if(!res.moved) return false; // no move
-
-  // update board to rotated result before spawn
-  let newRot = res.board;
-  // rotate back
-  let final;
-  if(dir==='left') final = newRot;
-  else if(dir==='right') final = rotate180(newRot);
-  else if(dir==='up') final = rotateRight(newRot);
-  else if(dir==='down') final = rotateLeft(newRot);
-
-  // animate tiles from original positions to new positions
-  await animateBoardTransition(original, final);
-
-  board = final;
-  score += res.gained;
-  scoreBox.textContent = score;
-
-  // spawn new tile after move (with small delay to allow slide)
-  addRandomTile(true);
-
-  // check win (>=2048)
-  if(board.some(r=>r.some(v=>v>=2048))){
-    winOverlay.classList.remove('hidden');
-    setTimeout(()=>winOverlay.classList.add('hidden'), 1600);
-  }
-
-  if(!canMove(board)){
-    gameOverOverlay.classList.remove('hidden');
-  }
-  return true;
-}
-
-/* === Animation: animate tile DOMs from original to new positions ===
-   Strategy: create mapping of tile elements from original non-zero cells,
-   then for each target cell with a value, find if it originates from a single
-   tile (move), or two tiles (merge). Simpler approach: remove all tile DOMs,
-   create new DOMs at original positions, then update their r/c to final positions,
-   letting CSS transitions move them; when merging, mark merged to play pulse.
-*/
-let isAnimating = false;
-async function animateBoardTransition(orig, fin){
-  isAnimating = true;
-  // clear existing DOM and re-create tiles representing orig state
-  clearTiles();
-  // For reproducible mapping: create tiles for each non-zero orig cell with unique ids
-  const mapIds = [];
-  for(let r=0;r<SIZE;r++){
-    for(let c=0;c<SIZE;c++){
-      const v = orig[r][c];
-      if(v!==0){
-        const id = createTile(v, r, c, false);
-        tilePositions[id].v = v;
-        mapIds.push({id, r, c, v});
-      }
-    }
-  }
-  layoutTiles();
-
-  // compute destination counts to detect merges
-  const destCounts = {};
-  for(let r=0;r<SIZE;r++){
-    for(let c=0;c<SIZE;c++){
-      const v = fin[r][c];
-      if(v!==0){
-        const key = r+','+c;
-        destCounts[key] = (destCounts[key]||0) + 1;
-      }
-    }
-  }
-
-  // Simple mapping heuristic:
-  // For each destination cell (r,c) with value v:
-  //  - if it existed exactly once in orig (no merge), move nearest tile with same value.
-  //  - if it results from merge (two same smaller), then find two tiles and animate them to same dest, then convert to merged tile.
-  // For implementation brevity we'll move tiles greedily by scanning orig tiles left-to-right to final left-to-right.
-
-  // Build list of dest positions in reading order
-  const destList = [];
-  for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++) if(fin[r][c]!==0) destList.push({r,c,v:fin[r][c]});
-  // Build list of source tiles in reading order
-  const srcList = mapIds.slice();
-
-  // Map sources to dests: greedily assign one source per dest, but if dest value equals double of source and there are two sources with same value,
-  // the greedy approach will still assign them in sequence; later we mark merges by checking if multiple sources assigned to a dest.
-  const assignments = {}; // destKey -> [sourceIds...]
-  let sIdx = 0;
-  for(let d of destList){
-    const key = d.r+','+d.c;
-    assignments[key] = assignments[key] || [];
-    // determine how many source tiles should go to this dest.
-    // If dest value appears in original as same value, likely one source; if it's a merge, two smaller values will map to it.
-    // Simplify: if there are at least 2 sources remaining and srcList[sIdx].v * 2 === d.v, then assign two sources if they match.
-    if(sIdx < srcList.length){
-      // try to see if merge is likely
-      if(sIdx+1 < srcList.length && srcList[sIdx].v + srcList[sIdx+1].v === d.v){
-        assignments[key].push(srcList[sIdx].id, srcList[sIdx+1].id);
-        sIdx += 2;
-      } else {
-        assignments[key].push(srcList[sIdx].id);
-        sIdx += 1;
-      }
-    }
-  }
-
-  // animate: for each dest, move its assigned sources to dest's r/c; if multiple assigned -> mark merged
-  for(const k in assignments){
-    const [r,c] = k.split(',').map(x=>parseInt(x));
-    const ids = assignments[k];
-    for(const id of ids){
-      if(!tilePositions[id]) continue;
-      tilePositions[id].r = r;
-      tilePositions[id].c = c;
-    }
-  }
-
-  // trigger layout (causes CSS transitions)
-  layoutTiles();
-
-  // wait for slide transition to finish (~160ms)
-  await new Promise(res => setTimeout(res, 170));
-
-  // Now replace any groups that merged: if a dest had more than 1 source, remove the extra tiles and create one merged tile with merged animation
-  // We'll find dests where assignments[key].length > 1
-  for(const k in assignments){
-    const ids = assignments[k];
-    if(ids.length > 1){
-      // compute value in final board at that dest
-      const [r,c] = k.split(',').map(x=>parseInt(x));
-      const v = fin[r][c];
-      // remove source elements
-      for(const id of ids){
-        if(tilePositions[id] && tilePositions[id].el){
-          tilePositions[id].el.remove();
-          delete tilePositions[id];
+  for(const destKey in destMap){
+    const list = destMap[destKey];
+    if(list.length === 1){
+      const s = list[0]; const t = tileMap[s.id];
+      if(t){
+        const parts = destKey.split(','); const r = parseInt(parts[0]), c = parseInt(parts[1]);
+        const finalVal = finalBoard[r][c];
+        if(t.v !== finalVal){
+          t.v = finalVal; t.el.dataset.value = finalVal; t.el.className = 'tile v' + finalVal;
+          t.el.classList.add('merged');
+          setTimeout(()=>{ t.el && t.el.classList.remove('merged'); }, 260);
+        } else {
+          t.el.className = 'tile v' + t.v;
         }
-      }
-      // create merged tile
-      const newId = createTile(v, r, c, false);
-      tilePositions[newId].merged = true;
-      // remove merged class soon
-      setTimeout(()=>{ if(tilePositions[newId]) tilePositions[newId].el.classList.remove('merged'); tilePositions[newId].merged=false; }, 260);
-    }
-  }
-
-  // For non-merged single assignments, ensure we update their value if they changed (e.g., moved and became merged later)
-  // Update surviving tile values to match final board values where unique
-  const remainingIds = Object.keys(tilePositions);
-  for(const id of remainingIds){
-    const t = tilePositions[id];
-    if(t){
-      const finalVal = fin[t.r][t.c];
-      if(finalVal && t.v !== finalVal){
-        t.v = finalVal;
-        t.el.className = 'tile v' + t.v;
-        // brief merged pulse
-        t.el.classList.add('merged');
-        setTimeout(()=>t.el && t.el.classList.remove('merged'), 220);
-      } else {
-        t.el.className = 'tile v' + t.v;
+        t.r = r; t.c = c;
       }
     }
   }
-
-  // final layout
-  layoutTiles();
-
-  // wait just a touch to let merged pop run
-  await new Promise(res => setTimeout(res, 120));
-  isAnimating = false;
+  for(const id in tileMap){
+    const t = tileMap[id];
+    const v = finalBoard[t.r] && finalBoard[t.r][t.c] ? finalBoard[t.r][t.c] : 0;
+    if(v === 0){ t.el.remove(); delete tileMap[id]; }
+  }
+  layoutAllTiles();
+  animating = false;
 }
 
-/* ==== Init & new game ==== */
-function startNewGame(){
-  emptyBoard();
-  clearTiles();
-  score = 0;
-  scoreBox.textContent = score;
-  gameOverOverlay.classList.add('hidden');
-  winOverlay.classList.add('hidden');
-  nextTileId = 1;
-  // place two tiles
-  addRandomTile(true);
-  addRandomTile(true);
+async function tryMove(dir){
+  if(animating) return;
+  const res = move(dir);
+  if(!res.moved) return;
+  const finalBoard = res.board;
+  if(Object.keys(tileMap).length === 0) renderBoardInitial();
+  await animateMoveUsingMappings(res.mappings, finalBoard);
+  board = finalBoard;
+  score += res.gained; scoreEl.textContent = score;
+  spawnRandomTile(true);
+  if(board.some(r=>r.some(v=>v>=2048))){ winOverlay.classList.remove('hidden'); setTimeout(()=>winOverlay.classList.add('hidden'), 1400); }
+  if(!canMove(board)) gameOverOverlay.classList.remove('hidden');
 }
-newBtn.addEventListener('click', startNewGame);
 
-/* ===== Input handling ===== */
-const keyMap = {
-  'ArrowLeft':'left', 'ArrowRight':'right', 'ArrowUp':'up','ArrowDown':'down',
-  'a':'left','A':'left','d':'right','D':'right','w':'up','W':'up','s':'down','S':'down'
-};
-document.addEventListener('keydown', (e)=>{
-  const k = e.key;
-  if(keyMap[k]){
-    e.preventDefault();
-    doMove(keyMap[k]);
-  }
-});
+function canMove(b){ for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++){ if(b[r][c]===0) return true; if(c+1<SIZE && b[r][c]===b[r][c+1]) return true; if(r+1<SIZE && b[r][c]===b[r+1][c]) return true; } return false; }
 
-/* touch swipe */
-let touchStartX=0, touchStartY=0, touchEndX=0, touchEndY=0;
-gridEl.addEventListener('touchstart', (e)=>{
-  if(e.touches.length>1) return;
-  touchStartX = e.touches[0].clientX;
-  touchStartY = e.touches[0].clientY;
-});
-gridEl.addEventListener('touchend', (e)=>{
-  if(!touchStartX && !touchStartY) return;
-  touchEndX = e.changedTouches[0].clientX;
-  touchEndY = e.changedTouches[0].clientY;
-  const dx = touchEndX - touchStartX;
-  const dy = touchEndY - touchStartY;
-  const absX = Math.abs(dx), absY = Math.abs(dy);
-  const threshold = 24; // min px to count
-  if(Math.max(absX,absY) < threshold) return;
-  if(absX > absY){
-    doMove(dx>0? 'right':'left');
-  } else {
-    doMove(dy>0? 'down':'up');
-  }
-  touchStartX = touchStartY = 0;
-});
+const keyMap = {'ArrowLeft':'left','ArrowRight':'right','ArrowUp':'up','ArrowDown':'down','a':'left','A':'left','d':'right','D':'right','w':'up','W':'up','s':'down','S':'down'};
+document.addEventListener('keydown',(e)=>{ if(keyMap[e.key]){ e.preventDefault(); tryMove(keyMap[e.key]); } });
 
-/* handle resize to re-layout tiles */
-window.addEventListener('resize', ()=> layoutTiles());
+let touchStartX=0,touchStartY=0;
+gridEl.addEventListener('touchstart',(e)=>{ if(e.touches.length>1) return; touchStartX=e.touches[0].clientX; touchStartY=e.touches[0].clientY; },{passive:true});
+gridEl.addEventListener('touchend',(e)=>{ if(!touchStartX && !touchStartY) return; const dx=e.changedTouches[0].clientX-touchStartX; const dy=e.changedTouches[0].clientY-touchStartY; const absX=Math.abs(dx), absY=Math.abs(dy); const threshold=20; if(Math.max(absX,absY)<threshold){ touchStartX=touchStartY=0; return; } if(absX>absY) tryMove(dx>0?'right':'left'); else tryMove(dy>0?'down':'up'); touchStartX=touchStartY=0; });
 
-/* start game */
-startNewGame();
+function newGame(){ emptyBoard(); clearTiles(); score=0; scoreEl.textContent=score; gameOverOverlay.classList.add('hidden'); winOverlay.classList.add('hidden'); spawnRandomTile(true); spawnRandomTile(true); layoutAllTiles(); }
+newBtn.addEventListener('click', newGame);
 
-/* initial layout */
-setTimeout(()=>layoutTiles(), 60);
+window.addEventListener('resize', ()=> layoutAllTiles());
 
+/* start */
+emptyBoard(); spawnRandomTile(true); spawnRandomTile(true); layoutAllTiles();
 </script>
 </body>
 </html>
